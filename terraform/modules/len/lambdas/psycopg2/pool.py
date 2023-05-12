@@ -55,7 +55,7 @@ class AbstractConnectionPool:
         self._rused = {}    # id(conn) -> key map
         self._keys = 0
 
-        for i in range(self.minconn):
+        for _ in range(self.minconn):
             self._connect()
 
     def _connect(self, key=None):
@@ -99,8 +99,8 @@ class AbstractConnectionPool:
 
         if key is None:
             key = self._rused.get(id(conn))
-            if key is None:
-                raise PoolError("trying to put unkeyed connection")
+        if key is None:
+            raise PoolError("trying to put unkeyed connection")
 
         if len(self._pool) < self.minconn and not close:
             # Return the connection into a consistent state before putting

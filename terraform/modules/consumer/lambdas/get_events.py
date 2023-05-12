@@ -14,7 +14,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 gdx_url = os.environ["gdx_url"]
-events_url = gdx_url + "/events"
+events_url = f"{gdx_url}/events"
 
 auth_url = os.environ["auth_url"]
 
@@ -63,11 +63,16 @@ def lambda_handler(event, _context):
 
 
 def get_first_events_page(auth_token: str):
-    return get_data(auth_token, events_url + "?page%5Bsize%5D=100")
+    return get_data(auth_token, f"{events_url}?page%5Bsize%5D=100")
 
 
 def get_data(auth_token: str, url: str):
-    events_request = request.Request(url, headers={"Authorization": "Bearer " + auth_token,
-                                                   "Accept": "application/vnd.api+json"})
+    events_request = request.Request(
+        url,
+        headers={
+            "Authorization": f"Bearer {auth_token}",
+            "Accept": "application/vnd.api+json",
+        },
+    )
     response: HTTPResponse = request.urlopen(events_request)
     return json.loads(response.read())

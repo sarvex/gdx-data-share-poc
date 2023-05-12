@@ -107,8 +107,8 @@ class FixedOffsetTimezone(datetime.tzinfo):
         rv = "%+03d" % hours
         if minutes or seconds:
             rv += ":%02d" % minutes
-            if seconds:
-                rv += ":%02d" % seconds
+        if seconds:
+            rv += ":%02d" % seconds
 
         return rv
 
@@ -130,16 +130,10 @@ class LocalTimezone(datetime.tzinfo):
     This is the exact implementation from the Python 2.3 documentation.
     """
     def utcoffset(self, dt):
-        if self._isdst(dt):
-            return DSTOFFSET
-        else:
-            return STDOFFSET
+        return DSTOFFSET if self._isdst(dt) else STDOFFSET
 
     def dst(self, dt):
-        if self._isdst(dt):
-            return DSTDIFF
-        else:
-            return ZERO
+        return DSTDIFF if self._isdst(dt) else ZERO
 
     def tzname(self, dt):
         return time.tzname[self._isdst(dt)]

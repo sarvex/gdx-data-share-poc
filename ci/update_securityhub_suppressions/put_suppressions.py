@@ -32,9 +32,7 @@ for suppression_id in suppressions.get("Suppressions", {}):
             }
         }
     )
-    print("Upserted rule with title {} in suppression table.".format(
-        suppression_id
-    ))
+    print(f"Upserted rule with title {suppression_id} in suppression table.")
 
 # Remove rules no longer in the suppressions config
 scan_paginator = dynamodb_client.get_paginator("scan")
@@ -51,6 +49,4 @@ for scan_page in scan_pages:
                     "title": {"S": item["title"]["S"]}
                 }
             )
-            print("Removed rule with title {} from suppression table.".format(
-                item["title"]["S"]
-            ))
+            print(f'Removed rule with title {item["title"]["S"]} from suppression table.')

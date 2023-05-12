@@ -157,9 +157,7 @@ def _create_json_typecasters(oid, array_oid, loads=None, name='JSON'):
         loads = json.loads
 
     def typecast_json(s, cur):
-        if s is None:
-            return None
-        return loads(s)
+        return None if s is None else loads(s)
 
     JSON = new_type((oid, ), name, typecast_json)
     if array_oid is not None:
@@ -181,7 +179,7 @@ def _get_json_oids(conn_or_curs, name='json'):
     conn_status = conn.status
 
     # column typarray not available before PG 8.3
-    typarray = conn.info.server_version >= 80300 and "typarray" or "NULL"
+    typarray = "typarray" if conn.info.server_version >= 80300 else "NULL"
 
     # get the oid for the hstore
     curs.execute(

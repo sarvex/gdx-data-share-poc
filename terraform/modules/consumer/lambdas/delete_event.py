@@ -12,7 +12,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 gdx_url = os.environ["gdx_url"]
-events_url = gdx_url + "/events"
+events_url = f"{gdx_url}/events"
 
 auth_url = os.environ["auth_url"]
 
@@ -34,8 +34,8 @@ def lambda_handler(event, _context):
 def delete_event(auth_token: str, event_id: str):
     event_request = request.Request(
         f"{events_url}/{event_id}",
-        headers={"Authorization": "Bearer " + auth_token},
-        method="DELETE"
+        headers={"Authorization": f"Bearer {auth_token}"},
+        method="DELETE",
     )
     start = time.time()
     request.urlopen(event_request)

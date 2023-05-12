@@ -14,11 +14,13 @@ logger = Logger()
 
 @logger.inject_lambda_context(log_event=True)
 def lambda_handler(event: Dict[str, Any], context: LambdaContext):
-    if 'Records' in event.keys():
-        logger.info(f'Handling DynamoDBStreamEvent')
+    if 'Records' in event:
+        logger.info('Handling DynamoDBStreamEvent')
         handle_stream_event(DynamoDBStreamEvent(event))
-    elif 'source' in event.keys() and event['source'] == 'aws.securityhub':
-        logger.info(f'Handling EventBridgeEvent')
+    elif 'source' in event and event['source'] == 'aws.securityhub':
+        logger.info('Handling EventBridgeEvent')
         handle_event_bridge_event(EventBridgeEvent(event))
     else:
-        logger.error(f'Event is neither of type EventBridgeEvent nor of type DynamoDBStreamEvent')
+        logger.error(
+            'Event is neither of type EventBridgeEvent nor of type DynamoDBStreamEvent'
+        )

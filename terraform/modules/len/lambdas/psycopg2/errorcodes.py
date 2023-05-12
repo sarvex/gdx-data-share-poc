@@ -39,13 +39,11 @@ def lookup(code, _cache={}):
     if _cache:
         return _cache[code]
 
-    # Generate the lookup map at first usage.
-    tmp = {}
-    for k, v in globals().items():
-        if isinstance(v, str) and len(v) in (2, 5):
-            # Strip trailing underscore used to disambiguate duplicate values
-            tmp[v] = k.rstrip("_")
-
+    tmp = {
+        v: k.rstrip("_")
+        for k, v in globals().items()
+        if isinstance(v, str) and len(v) in {2, 5}
+    }
     assert tmp
 
     # Atomic update, to avoid race condition on import (bug #382)

@@ -13,7 +13,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 gdx_url = os.environ["gdx_url"]
-events_url = gdx_url + "/events"
+events_url = f"{gdx_url}/events"
 auth_url = os.environ["auth_url"]
 
 client_id = os.environ["len_client_id"]
@@ -69,10 +69,10 @@ def post_event(auth_token: str):
         events_url,
         data=event_request_data,
         headers={
-            "Authorization": "Bearer " + auth_token,
+            "Authorization": f"Bearer {auth_token}",
             "Content-Type": "application/json; charset=utf-8",
-            "Content-Length": len(event_request_data)
-        }
+            "Content-Length": len(event_request_data),
+        },
     )
     logger.info(f"## Posting death certificate {death_registration_id}")
     request.urlopen(event_request).read()

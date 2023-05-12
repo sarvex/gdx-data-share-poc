@@ -14,8 +14,7 @@ def get_auth_token(auth_url, client_id, client_secret):
         method="POST",
         data=auth_request_data
     )
-    auth_token = json.loads(request.urlopen(auth_request).read())["access_token"]
-    return auth_token
+    return json.loads(request.urlopen(auth_request).read())["access_token"]
 
 
 def record_metric(client, namespace, metric_name, value, unit="Count"):

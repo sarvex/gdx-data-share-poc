@@ -14,7 +14,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 gdx_url = os.environ["gdx_url"]
-events_url = gdx_url + "/events"
+events_url = f"{gdx_url}/events"
 
 auth_url = os.environ["auth_url"]
 
@@ -48,7 +48,10 @@ def lambda_handler(event, _context):
 
 
 def get_event(auth_token: str, event_id: str):
-    event_request = request.Request(f"{events_url}/{event_id}", headers={"Authorization": "Bearer " + auth_token})
+    event_request = request.Request(
+        f"{events_url}/{event_id}",
+        headers={"Authorization": f"Bearer {auth_token}"},
+    )
     start = time.time()
     response: HTTPResponse = request.urlopen(event_request)
     stop = time.time()

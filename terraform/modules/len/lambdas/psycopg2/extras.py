@@ -66,12 +66,11 @@ class DictCursorBase(_cursor):
     """Base class for all dict-like cursors."""
 
     def __init__(self, *args, **kwargs):
-        if 'row_factory' in kwargs:
-            row_factory = kwargs['row_factory']
-            del kwargs['row_factory']
-        else:
+        if 'row_factory' not in kwargs:
             raise NotImplementedError(
                 "DictCursorBase can't be instantiated without a row factory.")
+        row_factory = kwargs['row_factory']
+        del kwargs['row_factory']
         super().__init__(*args, **kwargs)
         self._query_executed = False
         self._prefetch = False
@@ -373,11 +372,10 @@ class NamedTupleCursor(_cursor):
             # Python identifier cannot start with numbers, namedtuple fields
             # cannot start with underscore. So...
             if s[0] == '_' or '0' <= s[0] <= '9':
-                s = 'f' + s
+                s = f'f{s}'
             fields.append(s)
 
-        nt = namedtuple("Record", fields)
-        return nt
+        return namedtuple("Record", fields)
 
 
 @lru_cache(512)
@@ -419,15 +417,13 @@ class LoggingConnection(_connection):
         return msg
 
     def _logtofile(self, msg, curs):
-        msg = self.filter(msg, curs)
-        if msg:
+        if msg := self.filter(msg, curs):
             if isinstance(msg, bytes):
                 msg = msg.decode(_ext.encodings[self.encoding], 'replace')
             self._logobj.write(msg + _os.linesep)
 
     def _logtologger(self, msg, curs):
-        msg = self.filter(msg, curs)
-        if msg:
+        if msg := self.filter(msg, curs):
             self._logobj.debug(msg)
 
     def _check(self):
@@ -781,11 +777,9 @@ def _solve_conn_curs(conn_or_curs):
 
     if hasattr(conn_or_curs, 'execute'):
         conn = conn_or_curs.connection
-        curs = conn.cursor(cursor_factory=_cursor)
     else:
         conn = conn_or_curs
-        curs = conn.cursor(cursor_factory=_cursor)
-
+    curs = conn.cursor(cursor_factory=_cursor)
     return conn, curs
 
 
@@ -852,7 +846,7 @@ class HstoreAdapter:
     """, _re.VERBOSE)
 
     @classmethod
-    def parse(self, s, cur, _bsdec=_re.compile(r"\\(.)")):
+    def parse(cls, s, cur, _bsdec=_re.compile(r"\\(.)")):
         """Parse an hstore representation in a Python string.
 
         The hstore is represented as something like::
@@ -866,7 +860,7 @@ class HstoreAdapter:
 
         rv = {}
         start = 0
-        for m in self._re_hstore.finditer(s):
+        for m in cls._re_hstore.finditer(s):
             if m is None or m.start() != start:
                 raise psycopg2.InterfaceError(
                     f"error parsing hstore pair at char {start}")
@@ -885,16 +879,16 @@ class HstoreAdapter:
         return rv
 
     @classmethod
-    def parse_unicode(self, s, cur):
+    def parse_unicode(cls, s, cur):
         """Parse an hstore returning unicode keys and values."""
         if s is None:
             return None
 
         s = s.decode(_ext.encodings[cur.connection.encoding])
-        return self.parse(s, cur)
+        return cls.parse(s, cur)
 
     @classmethod
-    def get_oids(self, conn_or_curs):
+    def get_oids(cls, conn_or_curs):
         """Return the lists of OID of the hstore and hstore[] types.
         """
         conn, curs = _solve_conn_curs(conn_or_curs)
@@ -903,7 +897,7 @@ class HstoreAdapter:
         conn_status = conn.status
 
         # column typarray not available before PG 8.3
-        typarray = conn.info.server_version >= 80300 and "typarray" or "NULL"
+        typarray = "typarray" if conn.info.server_version >= 80300 else "NULL"
 
         rv0, rv1 = [], []
 
@@ -962,9 +956,8 @@ def register_hstore(conn_or_curs, globally=False, unicode=False,
             raise psycopg2.ProgrammingError(
                 "hstore type not found in the database. "
                 "please install it from your 'contrib/hstore.sql' file")
-        else:
-            array_oid = oid[1]
-            oid = oid[0]
+        array_oid = oid[1]
+        oid = oid[0]
 
     if isinstance(oid, int):
         oid = (oid,)
@@ -973,7 +966,7 @@ def register_hstore(conn_or_curs, globally=False, unicode=False,
         if isinstance(array_oid, int):
             array_oid = (array_oid,)
         else:
-            array_oid = tuple([x for x in array_oid if x])
+            array_oid = tuple(x for x in array_oid if x)
 
     # create and register the typecaster
     HSTORE = _ext.new_type(oid, "HSTORE", HstoreAdapter.parse)
@@ -1046,15 +1039,15 @@ class CompositeCaster:
     _re_undouble = _re.compile(r'(["\\])\1')
 
     @classmethod
-    def tokenize(self, s):
+    def tokenize(cls, s):
         rv = []
-        for m in self._re_tokenize.finditer(s):
+        for m in cls._re_tokenize.finditer(s):
             if m is None:
                 raise psycopg2.InterfaceError(f"can't parse type: {s!r}")
             if m.group(1) is not None:
                 rv.append(None)
             elif m.group(2) is not None:
-                rv.append(self._re_undouble.sub(r"\1", m.group(2)))
+                rv.append(cls._re_undouble.sub(r"\1", m.group(2)))
             else:
                 rv.append(m.group(3))
 
@@ -1065,7 +1058,7 @@ class CompositeCaster:
         self._ctor = self.type._make
 
     @classmethod
-    def _from_db(self, name, conn_or_curs):
+    def _from_db(cls, name, conn_or_curs):
         """Return a `CompositeCaster` instance for the type *name*.
 
         Raise `ProgrammingError` if the type is not found.
@@ -1083,7 +1076,7 @@ class CompositeCaster:
             schema = 'public'
 
         # column typarray not available before PG 8.3
-        typarray = conn.info.server_version >= 80300 and "typarray" or "NULL"
+        typarray = "typarray" if conn.info.server_version >= 80300 else "NULL"
 
         # get the type oid and attributes
         curs.execute("""\
@@ -1111,8 +1104,7 @@ ORDER BY attnum;
         array_oid = recs[0][1]
         type_attrs = [(r[2], r[3]) for r in recs]
 
-        return self(tname, type_oid, type_attrs,
-            array_oid=array_oid, schema=schema)
+        return cls(tname, type_oid, type_attrs, array_oid=array_oid, schema=schema)
 
 
 def register_composite(name, conn_or_curs, globally=False, factory=None):
@@ -1152,7 +1144,7 @@ def _paginate(seq, page_size):
     it = iter(seq)
     while True:
         try:
-            for i in range(page_size):
+            for _ in range(page_size):
                 page.append(next(it))
             yield page
             page = []
@@ -1297,8 +1289,9 @@ def _split_sql(sql):
         elif token[1:] == b'%':
             curr.append(b'%')
         else:
-            raise ValueError("unsupported format character: '%s'"
-                % token[1:].decode('ascii', 'replace'))
+            raise ValueError(
+                f"unsupported format character: '{token[1:].decode('ascii', 'replace')}'"
+            )
 
     if curr is pre:
         raise ValueError("the query doesn't contain any '%s' placeholder")

@@ -47,7 +47,7 @@ def suppress_finding(finding):
         table.get_item(Key={"title": title}).get('Item', {}).get('data', {})
     ))
 
-    if len(suppression_rules) == 0:
+    if not suppression_rules:
         logger.warning(f'No rules found for title: {title}')
         return None
 
@@ -55,8 +55,7 @@ def suppress_finding(finding):
         resource_id = resource['Id']
         for rule in suppression_rules:
             for resource_check in rule.resources:
-                match = search(resource_check, resource_id)
-                if match:
+                if match := search(resource_check, resource_id):
                     logger.info(
                         f'Perform Suppression on finding {finding_id}, '
                         f'matched resource check: {resource_check}, '
